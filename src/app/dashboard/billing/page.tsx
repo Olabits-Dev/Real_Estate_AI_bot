@@ -89,6 +89,31 @@ export default async function BillingPage({
           Add a billing email first, then retry the upgrade to continue to Paystack.
         </div>
       )}
+      {status === "paystack_not_configured" && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          Payment gateway is not configured yet. Please contact support.
+        </div>
+      )}
+      {status === "plan_not_configured" && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          Selected plan is temporarily unavailable. Please contact support.
+        </div>
+      )}
+      {status === "invalid_plan" && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Invalid plan selected. Please retry from the billing page.
+        </div>
+      )}
+      {status === "missing_company" && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          No active company found for this account. Please re-login and try again.
+        </div>
+      )}
+      {status === "checkout_error" && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          Payment initialization failed. Please try again shortly.
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         {plans.map((plan) => (
