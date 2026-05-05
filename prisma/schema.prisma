@@ -43,7 +43,7 @@ model Company {
   paystackSubscriptionCode      String?
   paystackSubscriptionEmailToken String?
   paystackLastReference         String?
-  dataSourceApiKey              String                 @unique
+  dataSourceApiKey              String                 @unique @default(cuid())
   dataSourceEndpoint            String?
   dataSourceLastSyncedAt        DateTime?
   dataSourceLastSyncStatus      DataSyncStatus         @default(IDLE)
