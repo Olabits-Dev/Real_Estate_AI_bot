@@ -5,6 +5,7 @@ import { scrapeWebsite } from "@/lib/scraper";
 import { sendIntegrationSnippetEmail } from "@/lib/mailer";
 import { getRuntimeAppBaseUrl } from "@/lib/app-url";
 import { generatePublicKey } from "@/lib/public-key";
+import { requireRole } from "@/lib/auth";
 import type { EmailState, OnboardingState } from "@/app/onboarding/state";
 
 function getFormValue(formData: FormData, key: string) {
@@ -41,6 +42,7 @@ export async function scrapeAndConfigure(
   _prevState: OnboardingState,
   formData: FormData,
 ): Promise<OnboardingState> {
+  await requireRole("DEVELOPER");
   const prisma = getPrismaClient();
   const websiteInput = getFormValue(formData, "websiteUrl");
 
@@ -131,6 +133,7 @@ export async function emailSnippetToDeveloper(
   _prevState: EmailState,
   formData: FormData,
 ): Promise<EmailState> {
+  await requireRole("DEVELOPER");
   const developerEmail = getFormValue(formData, "developerEmail");
   const companyName = getFormValue(formData, "companyName");
   const snippet = getFormValue(formData, "snippet");

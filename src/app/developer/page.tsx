@@ -42,14 +42,22 @@ export default async function DeveloperDashboardPage() {
               </p>
             )}
           </div>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-semibold hover:bg-slate-800"
+          <div className="flex items-center gap-2">
+            <a
+              href="/developer/onboarding"
+              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
             >
-              Logout
-            </button>
-          </form>
+              Open Onboarding Engine
+            </a>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-semibold hover:bg-slate-800"
+              >
+                Logout
+              </button>
+            </form>
+          </div>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2">
