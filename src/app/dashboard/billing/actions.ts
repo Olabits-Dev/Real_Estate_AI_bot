@@ -11,6 +11,7 @@ import {
   type BillingPlan,
 } from "@/lib/paystack";
 import { getPrismaClient } from "@/lib/prisma";
+import { getCurrentSession } from "@/lib/auth";
 
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -42,18 +43,21 @@ const planAmountsInKobo: Record<BillingPlan, number> = {
 export async function subscribeToPlan(formData: FormData) {
   const prisma = getPrismaClient();
   const company = await getDashboardCompany();
+  const session = await getCurrentSession();
   if (!company) {
     throw new Error("No active company selected.");
   }
 
   const plan = getFormValue(formData, "plan");
-  const billingEmail = getFormValue(formData, "billingEmail").toLowerCase();
+  const billingEmailInput = getFormValue(formData, "billingEmail").toLowerCase();
+  const sessionEmail = session?.user.email?.toLowerCase() ?? "";
+  const billingEmail = billingEmailInput || company.billingEmail || sessionEmail;
 
   if (!isBillingPlan(plan)) {
     throw new Error("Invalid billing plan.");
   }
   if (!billingEmail) {
-    throw new Error("Billing email is required.");
+    throw new Error("Billing email is required. Add one in billing or profile.");
   }
 
   const reference = `olabits_${company.id}_${Date.now()}_${crypto

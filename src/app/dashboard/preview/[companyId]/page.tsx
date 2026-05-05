@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import RealEstateChat from "@/components/RealEstateChat";
+import { requireRole } from "@/lib/auth";
 import { toBillingPlan } from "@/lib/billing-plan";
 import { getPrismaClient } from "@/lib/prisma";
 import { buildQuickStarters } from "@/lib/quick-starters";
@@ -20,6 +21,7 @@ export default async function CompanyLivePreviewPage({
   params: Promise<{ companyId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireRole("DEVELOPER");
   const { companyId } = await params;
   const query = await searchParams;
   const prisma = getPrismaClient();

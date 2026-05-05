@@ -1,7 +1,7 @@
 import { CheckCircle2, Crown, Gem, Shield } from "lucide-react";
-import Link from "next/link";
 import { getDashboardCompany } from "@/lib/company-context";
 import { cancelSubscription, subscribeToPlan } from "@/app/dashboard/billing/actions";
+import { getCurrentSession } from "@/lib/auth";
 
 type BillingPlanCard = {
   key: "SILVER" | "GOLD" | "PLATINUM";
@@ -47,6 +47,7 @@ export default async function BillingPage({
   const params = await searchParams;
   const status = typeof params.status === "string" ? params.status : "";
   const company = await getDashboardCompany();
+  const session = await getCurrentSession();
 
   if (!company) {
     return (
@@ -59,7 +60,8 @@ export default async function BillingPage({
     );
   }
 
-  const defaultEmail = company.billingEmail ?? "";
+  const defaultEmail =
+    company.billingEmail ?? session?.user.email?.toLowerCase() ?? "";
 
   return (
     <section className="space-y-6">
@@ -125,6 +127,9 @@ export default async function BillingPage({
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring-2"
                 required
               />
+              <p className="text-xs text-slate-500">
+                Defaults to your registered account email. You can change it.
+              </p>
               <button
                 type="submit"
                 className="w-full rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
@@ -132,12 +137,6 @@ export default async function BillingPage({
                 Subscribe
               </button>
             </form>
-            <Link
-              href={`/preview/${company.id}?plan=${plan.key}`}
-              className="mt-2 inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-            >
-              Open {plan.name} Preview Link
-            </Link>
           </article>
         ))}
       </div>

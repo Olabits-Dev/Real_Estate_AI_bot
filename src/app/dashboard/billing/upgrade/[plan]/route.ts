@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { getDashboardCompany } from "@/lib/company-context";
+import { getCurrentSession } from "@/lib/auth";
 import { toBillingPlan } from "@/lib/billing-plan";
 import { initializeTransaction, resolvePlanCode } from "@/lib/paystack";
 import { getPrismaClient } from "@/lib/prisma";
@@ -29,6 +30,7 @@ export async function GET(
 ) {
   const prisma = getPrismaClient();
   const company = await getDashboardCompany();
+  const session = await getCurrentSession();
   const params = await context.params;
   const plan = toBillingPlan(params.plan);
 
@@ -36,7 +38,10 @@ export async function GET(
     return NextResponse.redirect(new URL("/dashboard/billing", getAppBaseUrl()));
   }
 
-  if (!company.billingEmail) {
+  const billingEmail =
+    company.billingEmail ?? session?.user.email?.toLowerCase() ?? "";
+
+  if (!billingEmail) {
     return NextResponse.redirect(
       new URL(`/dashboard/billing?status=missing_email&upgrade=${plan}`, getAppBaseUrl()),
     );
@@ -47,7 +52,7 @@ export async function GET(
     .slice(0, 8)}`;
 
   const initialized = await initializeTransaction({
-    email: company.billingEmail,
+    email: billingEmail,
     amount: planAmountsInKobo[plan],
     reference,
     callbackUrl: `${getAppBaseUrl()}/dashboard/billing?status=success`,
@@ -63,6 +68,7 @@ export async function GET(
     where: { id: company.id },
     data: {
       plan,
+      billingEmail,
       paystackLastReference: initialized.reference,
     },
   });

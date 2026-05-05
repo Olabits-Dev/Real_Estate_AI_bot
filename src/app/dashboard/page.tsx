@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Building2, Home, MapPin, MessageCircle } from "lucide-react";
 import { getDashboardCompany } from "@/lib/company-context";
 import { getPlanAccess } from "@/lib/plans";
@@ -58,12 +57,6 @@ export default async function DashboardOverviewPage() {
           {company.isSubscribed ? "Subscription Active" : "Subscription Inactive"}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link
-            href={`/dashboard/preview/${company.id}`}
-            className="inline-flex rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-          >
-            Open Live Preview
-          </Link>
           {!company.isSubscribed && (
             <a
               href="/dashboard/billing/upgrade/GOLD"
