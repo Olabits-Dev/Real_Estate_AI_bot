@@ -8,6 +8,8 @@ datasource db {
 
 model Property {
   id           String   @id @default(cuid())
+  sourceListingId String @default(cuid())
+  sourceType   PropertySource @default(MANUAL)
   title        String
   description  String   @db.Text
   price        Float
@@ -19,6 +21,7 @@ model Property {
   company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId, isAvailable])
+  @@unique([companyId, sourceListingId])
 }
 
 model Company {
@@ -40,6 +43,13 @@ model Company {
   paystackSubscriptionCode      String?
   paystackSubscriptionEmailToken String?
   paystackLastReference         String?
+  dataSourceApiKey              String                 @unique
+  dataSourceEndpoint            String?
+  dataSourceLastSyncedAt        DateTime?
+  dataSourceLastSyncStatus      DataSyncStatus         @default(IDLE)
+  dataSourceLastSyncMessage     String?
+  dataSourceLastSyncedCount     Int?
+  dataSourceSyncInProgressAt    DateTime?
   createdAt                     DateTime               @default(now())
   updatedAt                     DateTime               @updatedAt
   properties                    Property[]
@@ -119,4 +129,16 @@ enum UserRole {
 enum CompanyMemberRole {
   OWNER
   STAFF
+}
+
+enum PropertySource {
+  MANUAL
+  CLIENT_SYNC
+}
+
+enum DataSyncStatus {
+  IDLE
+  RUNNING
+  SUCCESS
+  FAILED
 }

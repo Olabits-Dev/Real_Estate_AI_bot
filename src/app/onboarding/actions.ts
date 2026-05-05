@@ -5,6 +5,7 @@ import { scrapeWebsite } from "@/lib/scraper";
 import { sendIntegrationSnippetEmail } from "@/lib/mailer";
 import { getRuntimeAppBaseUrl } from "@/lib/app-url";
 import { generatePublicKey } from "@/lib/public-key";
+import { generateDataSourceApiKey } from "@/lib/source-key";
 import { requireRole } from "@/lib/auth";
 import type { EmailState, OnboardingState } from "@/app/onboarding/state";
 
@@ -78,6 +79,7 @@ Speak in a way that matches this vibe while remaining professional and conversio
         slug,
         apiKey: companyApiKey,
         publicKey: companyPublicKey,
+        dataSourceApiKey: generateDataSourceApiKey(),
         systemPrompt: promptFromBrand,
         primaryLocation: "Lagos",
         aiPersonality: "FRIENDLY",

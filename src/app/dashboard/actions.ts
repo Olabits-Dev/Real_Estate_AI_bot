@@ -2,10 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth";
+import { getDashboardCompany } from "@/lib/company-context";
 import { normalizeDomain } from "@/lib/domain";
 import { getPlanAccess } from "@/lib/plans";
+import {
+  acquireSyncLock,
+  extractPropertiesFromPayload,
+  finishSyncFailure,
+  finishSyncSuccess,
+  runPropertySync,
+} from "@/lib/property-sync";
 import { generatePublicKey } from "@/lib/public-key";
+import { generateDataSourceApiKey } from "@/lib/source-key";
 import { getPrismaClient } from "@/lib/prisma";
 
 const personalityToPrompt = {
@@ -17,6 +27,14 @@ const personalityToPrompt = {
     "Concise, professional, and action-oriented. Focus on facts and quick next steps.",
 } as const;
 const ACTIVE_COMPANY_COOKIE = "dashboard_active_company_id";
+
+function revalidateDashboardData() {
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/profile");
+  revalidatePath("/dashboard/listings");
+  revalidatePath("/dashboard/integration");
+  revalidatePath("/dashboard/billing");
+}
 
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -169,6 +187,7 @@ export async function createCompany(formData: FormData) {
       slug,
       apiKey: randomApiKey(),
       publicKey: generatePublicKey(),
+      dataSourceApiKey: generateDataSourceApiKey(),
       systemPrompt: personalityToPrompt[personalityKey],
       primaryLocation,
       aiPersonality: personalityKey,
@@ -304,4 +323,127 @@ export async function deleteCompany(formData: FormData) {
   revalidatePath("/dashboard/listings");
   revalidatePath("/dashboard/integration");
   revalidatePath("/dashboard/billing");
+}
+
+function normalizeEndpointUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  try {
+    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    const parsed = new URL(withProtocol);
+    if (!["http:", "https:"].includes(parsed.protocol)) return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
+export async function updateCompanyDataSource(formData: FormData) {
+  const prisma = getPrismaClient();
+  const company = await getDashboardCompany();
+  if (!company) {
+    redirect("/dashboard/integration?sync=missing_company");
+  }
+
+  const endpointRaw = getFormValue(formData, "dataSourceEndpoint");
+  const endpoint = normalizeEndpointUrl(endpointRaw);
+
+  if (endpointRaw && !endpoint) {
+    redirect("/dashboard/integration?sync=invalid_endpoint");
+  }
+
+  await prisma.company.update({
+    where: { id: company.id },
+    data: {
+      dataSourceEndpoint: endpoint || null,
+      dataSourceLastSyncMessage: endpoint
+        ? "Data source endpoint updated."
+        : "Data source endpoint cleared.",
+    },
+  });
+
+  revalidateDashboardData();
+  redirect(
+    `/dashboard/integration?sync=${endpoint ? "config_saved" : "config_cleared"}`,
+  );
+}
+
+export async function rotateCompanyDataSourceKey() {
+  const prisma = getPrismaClient();
+  const company = await getDashboardCompany();
+  if (!company) {
+    redirect("/dashboard/integration?sync=missing_company");
+  }
+
+  await prisma.company.update({
+    where: { id: company.id },
+    data: {
+      dataSourceApiKey: generateDataSourceApiKey(),
+      dataSourceLastSyncMessage: "Data source API key rotated.",
+    },
+  });
+
+  revalidateDashboardData();
+  redirect("/dashboard/integration?sync=key_rotated");
+}
+
+function readPropertiesFromPayload(payload: unknown) {
+  return extractPropertiesFromPayload(payload);
+}
+
+export async function syncPropertiesNow() {
+  const company = await getDashboardCompany();
+  if (!company) {
+    redirect("/dashboard/integration?sync=missing_company");
+  }
+
+  if (!company.dataSourceEndpoint) {
+    redirect("/dashboard/integration?sync=missing_endpoint");
+  }
+
+  const lockAcquired = await acquireSyncLock(company.id);
+  if (!lockAcquired) {
+    redirect("/dashboard/integration?sync=in_progress");
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    const response = await fetch(company.dataSourceEndpoint, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "x-client-source-key": company.dataSourceApiKey,
+        Authorization: `Bearer ${company.dataSourceApiKey}`,
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
+
+    if (!response.ok) {
+      throw new Error(`Source endpoint request failed (${response.status}).`);
+    }
+
+    const payload = (await response.json()) as unknown;
+    const properties = readPropertiesFromPayload(payload);
+    const result = await runPropertySync({
+      companyId: company.id,
+      properties,
+      replaceExisting: true,
+    });
+
+    await finishSyncSuccess(
+      company.id,
+      result.processed,
+      `Sync successful: ${result.processed} listing(s) processed.`,
+    );
+
+    revalidateDashboardData();
+    redirect(`/dashboard/integration?sync=success&count=${result.processed}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Sync failed.";
+    await finishSyncFailure(company.id, message);
+    revalidateDashboardData();
+    redirect("/dashboard/integration?sync=failed");
+  }
 }

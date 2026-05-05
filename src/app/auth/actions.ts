@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth";
 import { normalizeDomain } from "@/lib/domain";
 import { generatePublicKey } from "@/lib/public-key";
+import { generateDataSourceApiKey } from "@/lib/source-key";
 import { getPrismaClient } from "@/lib/prisma";
 
 function getFormValue(formData: FormData, key: string) {
@@ -179,6 +180,7 @@ export async function registerSubscriber(formData: FormData) {
       slug,
       apiKey: randomApiKey(),
       publicKey: generatePublicKey(),
+      dataSourceApiKey: generateDataSourceApiKey(),
       systemPrompt:
         "Warm, conversational, and helpful. Keep answers simple and reassuring.",
       primaryLocation,
