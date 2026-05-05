@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { getDashboardCompany } from "@/lib/company-context";
 import { getCurrentSession } from "@/lib/auth";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { toBillingPlan } from "@/lib/billing-plan";
 import { initializeTransaction, resolvePlanCode } from "@/lib/paystack";
 import { getPrismaClient } from "@/lib/prisma";
@@ -11,18 +12,6 @@ const planAmountsInKobo = {
   GOLD: 4500000,
   PLATINUM: 10000000,
 } as const;
-
-function getAppBaseUrl() {
-  const configured =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ?? process.env.APP_BASE_URL?.trim();
-  if (configured) {
-    return (/^https?:\/\//i.test(configured)
-      ? configured
-      : `https://${configured}`
-    ).replace(/\/+$/g, "");
-  }
-  return "http://localhost:3000";
-}
 
 export async function GET(
   _request: Request,

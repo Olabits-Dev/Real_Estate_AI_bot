@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getDashboardCompany } from "@/lib/company-context";
+import { getAppBaseUrl } from "@/lib/app-url";
 import {
   disableSubscription,
   initializeTransaction,
@@ -16,18 +17,6 @@ import { getCurrentSession } from "@/lib/auth";
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
-}
-
-function getAppBaseUrl() {
-  const configured =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ?? process.env.APP_BASE_URL?.trim();
-  if (configured) {
-    return (/^https?:\/\//i.test(configured)
-      ? configured
-      : `https://${configured}`
-    ).replace(/\/+$/g, "");
-  }
-  return "http://localhost:3000";
 }
 
 function isBillingPlan(value: string): value is BillingPlan {

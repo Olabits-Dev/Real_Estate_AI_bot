@@ -1,4 +1,5 @@
 import { getPrismaClient } from "@/lib/prisma";
+import { getPaystackWebhookUrl } from "@/lib/app-url";
 import {
   createSubscription,
   planCodeByTier,
@@ -50,6 +51,14 @@ async function findCompanyFromPayload(data: Record<string, unknown>) {
     if (byId) return byId;
   }
 
+  const reference = getString(data.reference);
+  if (reference) {
+    const byReference = await prisma.company.findFirst({
+      where: { paystackLastReference: reference },
+    });
+    if (byReference) return byReference;
+  }
+
   const customer = (data.customer as Record<string, unknown> | undefined) ?? {};
   const customerCode =
     getString(customer.customer_code) ?? getString(data.customer_code);
@@ -76,6 +85,17 @@ async function findCompanyFromPayload(data: Record<string, unknown>) {
   }
 
   return null;
+}
+
+export async function GET() {
+  return Response.json(
+    {
+      ok: true,
+      webhookUrl: getPaystackWebhookUrl(),
+      note: "Set this URL in Paystack Dashboard -> API Keys & Webhooks.",
+    },
+    { status: 200 },
+  );
 }
 
 async function handleChargeSuccess(data: Record<string, unknown>) {
