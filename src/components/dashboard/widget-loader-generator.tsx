@@ -5,7 +5,7 @@ type WidgetLoaderGeneratorProps = {
 };
 
 export function WidgetLoaderGenerator({ publicKey, baseUrl }: WidgetLoaderGeneratorProps) {
-  const universalLoaderScript = `<script src="${baseUrl}/widget.js" data-public-key="${publicKey}" defer></script>`;
+  const universalLoaderScript = `<script src="${baseUrl}/widget.js" data-public-key="${publicKey}" data-api-base="${baseUrl}" defer></script>`;
 
   const typeScriptWindowDeclaration = `declare global {
   interface RealEstateBotConfig {

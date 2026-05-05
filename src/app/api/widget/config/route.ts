@@ -6,7 +6,8 @@ function createCorsHeaders(req: Request) {
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, x-company-public-key",
+    "Access-Control-Allow-Headers":
+      "Content-Type, x-company-public-key, x-company-api-key",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };

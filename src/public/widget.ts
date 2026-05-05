@@ -83,6 +83,9 @@ function resolveApiKey(script: HTMLScriptElement | null) {
 }
 
 function resolveApiBase(script: HTMLScriptElement | null) {
+  const fromScript = script?.getAttribute("data-api-base")?.trim();
+  if (fromScript) return normalizeApiBase(fromScript);
+
   const fromGlobal = window.OlabitsWidgetConfig?.apiBaseUrl?.trim();
   if (fromGlobal) return normalizeApiBase(fromGlobal);
 
