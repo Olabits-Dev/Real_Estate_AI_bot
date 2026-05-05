@@ -65,10 +65,10 @@ export async function createSession(userId: string) {
 }
 
 export async function destroySession() {
-  const prisma = getPrismaClient();
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (token) {
+    const prisma = getPrismaClient();
     try {
       await prisma.userSession.deleteMany({
         where: { token },
@@ -81,10 +81,10 @@ export async function destroySession() {
 }
 
 export async function getCurrentSession() {
-  const prisma = getPrismaClient();
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
+  const prisma = getPrismaClient();
 
   let session: SessionWithUser | null = null;
   try {

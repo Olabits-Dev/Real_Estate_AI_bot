@@ -3,9 +3,11 @@ import { openClientWorkspace } from "@/app/developer/actions";
 import { requireRole } from "@/lib/auth";
 import { getPrismaClient } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function DeveloperDashboardPage() {
-  const prisma = getPrismaClient();
   await requireRole("DEVELOPER");
+  const prisma = getPrismaClient();
 
   let companies: Awaited<ReturnType<typeof prisma.company.findMany>> = [];
   let users: Awaited<ReturnType<typeof prisma.user.findMany>> = [];
