@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Property {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @db.Text
+  price        Float
+  location     String
+  propertyType String
+  isAvailable  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, isAvailable])
+}
+
+model Company {
+  id                            String                 @id @default(cuid())
+  name                          String
+  slug                          String                 @unique
+  apiKey                        String                 @unique
+  publicKey                     String                 @unique
+  systemPrompt                  String                 @db.Text
+  primaryLocation               String                 @default("Lagos")
+  aiPersonality                 AIPersonality          @default(FRIENDLY)
+  whatsappNum                   String
+  authorizedDomain              String
+  billingEmail                  String?
+  plan                          BillingPlan?
+  isSubscribed                  Boolean                @default(false)
+  planExpiresAt                 DateTime?
+  paystackCustomerCode          String?
+  paystackSubscriptionCode      String?
+  paystackSubscriptionEmailToken String?
+  paystackLastReference         String?
+  createdAt                     DateTime               @default(now())
+  updatedAt                     DateTime               @updatedAt
+  properties                    Property[]
+  analytics                     ConversationAnalytics[]
+  members                       CompanyMember[]
+
+  @@index([publicKey])
+}
+
+enum AIPersonality {
+  FRIENDLY
+  LUXURY_FOCUSED
+  DIRECT
+}
+
+enum BillingPlan {
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+model ConversationAnalytics {
+  id                    String   @id @default(cuid())
+  companyId             String
+  latestUserMessage     String   @db.Text
+  userMessageCount      Int
+  assistantMessageCount Int
+  totalMessageCount     Int
+  createdAt             DateTime @default(now())
+  company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+}
+
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  passwordHash String
+  fullName     String
+  role         UserRole        @default(SUBSCRIBER)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  sessions     UserSession[]
+  memberships  CompanyMember[]
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId, expiresAt])
+}
+
+model CompanyMember {
+  id        String            @id @default(cuid())
+  userId    String
+  companyId String
+  role      CompanyMemberRole @default(OWNER)
+  createdAt DateTime          @default(now())
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+}
+
+enum UserRole {
+  DEVELOPER
+  SUBSCRIBER
+}
+
+enum CompanyMemberRole {
+  OWNER
+  STAFF
+}
