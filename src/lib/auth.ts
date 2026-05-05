@@ -11,8 +11,8 @@ type SessionWithUser = Prisma.UserSessionGetPayload<{
     user: {
       include: {
         memberships: {
-          include: {
-            company: true;
+          select: {
+            companyId: true;
           };
         };
       };
@@ -60,6 +60,8 @@ export async function createSession(userId: string) {
     httpOnly: true,
     path: "/",
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_TTL_DAYS * 24 * 60 * 60,
     expires: expiresAt,
   });
 }
@@ -94,8 +96,8 @@ export async function getCurrentSession() {
         user: {
           include: {
             memberships: {
-              include: {
-                company: true,
+              select: {
+                companyId: true,
               },
             },
           },

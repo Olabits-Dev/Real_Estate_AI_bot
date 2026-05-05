@@ -11,7 +11,15 @@ export async function getDashboardCompany() {
 
   if (session.user.role === "SUBSCRIBER") {
     const firstMembership = session.user.memberships.at(0);
-    return firstMembership?.company ?? null;
+    if (!firstMembership) return null;
+    try {
+      return await prisma.company.findUnique({
+        where: { id: firstMembership.companyId },
+      });
+    } catch (error) {
+      console.error("Subscriber company lookup failed:", error);
+      return null;
+    }
   }
 
   const cookieStore = await cookies();
@@ -59,7 +67,17 @@ export async function getAllDashboardCompanies() {
   if (!session) return [];
 
   if (session.user.role === "SUBSCRIBER") {
-    return session.user.memberships.map((membership) => membership.company);
+    const companyIds = session.user.memberships.map((membership) => membership.companyId);
+    if (!companyIds.length) return [];
+    try {
+      return await prisma.company.findMany({
+        where: { id: { in: companyIds } },
+        orderBy: { createdAt: "asc" },
+      });
+    } catch (error) {
+      console.error("Subscriber companies query failed:", error);
+      return [];
+    }
   }
 
   try {
